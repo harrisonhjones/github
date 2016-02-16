@@ -79,14 +79,14 @@
                cb(
                   null,
                   response.data || true,
-                  response.request
+                  response
                );
             }, function (response) {
                if (response.status === 304) {
                   cb(
                      null,
                      response.data || true,
-                     response.request
+                     response
                   );
                } else {
                   cb({
@@ -102,7 +102,7 @@
          var results = [];
 
          (function iterate() {
-            _request('GET', path, null, function (err, res, xhr) {
+            _request('GET', path, null, function (err, res, raw) {
                if (err) {
                   return cb(err);
                }
@@ -113,7 +113,7 @@
 
                results.push.apply(results, res);
 
-               var links = (xhr.getResponseHeader('link') || '').split(/\s*,\s*/g);
+               var links = (raw.headers.link || '').split(/\s*,\s*/g);
                var next = null;
 
                links.forEach(function (link) {
@@ -330,12 +330,12 @@
          // -------
 
          this.getRef = function (ref, cb) {
-            _request('GET', repoPath + '/git/refs/' + ref, null, function (err, res, xhr) {
+            _request('GET', repoPath + '/git/refs/' + ref, null, function (err, res, raw) {
                if (err) {
                   return cb(err);
                }
 
-               cb(null, res.object.sha, xhr);
+               cb(null, res.object.sha, raw);
             });
          };
 
@@ -448,11 +448,11 @@
          // -------
 
          this.listBranches = function (cb) {
-            _request('GET', repoPath + '/git/refs/heads', null, function (err, heads, xhr) {
+            _request('GET', repoPath + '/git/refs/heads', null, function (err, heads, raw) {
                if (err) return cb(err);
                cb(null, heads.map(function (head) {
                   return head.ref.replace(/^refs\/heads\//, '');
-               }), xhr);
+               }), raw);
             });
          };
 
@@ -476,9 +476,9 @@
          this.getSha = function (branch, path, cb) {
             if (!path || path === '') return that.getRef('heads/' + branch, cb);
             _request('GET', repoPath + '/contents/' + path + (branch ? '?ref=' + branch : ''),
-               null, function (err, pathContent, xhr) {
+               null, function (err, pathContent, raw) {
                   if (err) return cb(err);
-                  cb(null, pathContent.sha, xhr);
+                  cb(null, pathContent.sha, raw);
                });
          };
 
@@ -493,9 +493,9 @@
          // -------
 
          this.getTree = function (tree, cb) {
-            _request('GET', repoPath + '/git/trees/' + tree, null, function (err, res, xhr) {
+            _request('GET', repoPath + '/git/trees/' + tree, null, function (err, res, raw) {
                if (err) return cb(err);
-               cb(null, res.tree, xhr);
+               cb(null, res.tree, raw);
             });
          };
 
@@ -608,10 +608,10 @@
             retry = retry || 1000;
             var that = this;
 
-            _request('GET', repoPath + '/stats/contributors', null, function (err, data, xhr) {
+            _request('GET', repoPath + '/stats/contributors', null, function (err, data, raw) {
                if (err) return cb(err);
 
-               if (xhr.status === 202) {
+               if (raw.status === 202) {
                   setTimeout(
                      function () {
                         that.contributors(cb, retry);
@@ -619,7 +619,7 @@
                      retry
                   );
                } else {
-                  cb(err, data, xhr);
+                  cb(err, data, raw);
                }
             });
          };
@@ -714,11 +714,11 @@
 
          this.read = function (branch, path, cb) {
             _request('GET', repoPath + '/contents/' + encodeURI(path) + (branch ? '?ref=' + branch : ''),
-               null, function (err, obj, xhr) {
+               null, function (err, obj, raw) {
                   if (err && err.error === 404) return cb('not found', null, null);
 
                   if (err) return cb(err);
-                  cb(null, obj, xhr);
+                  cb(null, obj, raw);
                }, true);
          };
 
